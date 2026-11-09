@@ -1,5 +1,12 @@
 RFID Event Check-In & Lucky Draw — Prototype
 
+## Live demo
+
+- Operator console: https://wmchau89-source.github.io/001demo-rfid-event-checkin/
+- Public viewport: https://wmchau89-source.github.io/001demo-rfid-event-checkin/public.html
+- Draw screen: https://wmchau89-source.github.io/001demo-rfid-event-checkin/draw.html
+
+Note: open the operator, public, and draw pages in separate tabs — the pages are decoupled and sync via browser storage.
 A three-screen event check-in prototype: an operator console, a public viewport, and a lucky-draw screen, synced via browser storage. Built to validate the scan → welcome → reset pipeline and the operational edge cases (duplicate scans, mis-scans, hardware fallback) rather than as a production system.
 How to run
 
