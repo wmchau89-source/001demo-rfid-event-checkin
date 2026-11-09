@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lucky Draw</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="card centered">
+      <p id="count" class="muted"></p>
+      <div class="stack">
+        <p id="idle-view" class="view show">Awaiting draw…</p>
+        <div id="winner-view" class="view winner">
+          <h1 id="winner-text"></h1>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { STORAGE_KEYS, loadAttendees, entrantsOf, parseEvent } from "/shared.js";
+
+      const countEl = document.getElementById("count");
+      const idleView = document.getElementById("idle-view");
+      const winnerView = document.getElementById("winner-view");
+      const winnerText = document.getElementById("winner-text");
+
+      function renderCount() {
+        const total = entrantsOf(loadAttendees()).length;
+        countEl.textContent = `${total} guests entered in the draw.`;
+      }
+
+      function showWinner(winnerName) {
+        winnerText.textContent = `🎉 Congratulations, ${winnerName}! You are the lucky draw winner.`;
+        idleView.classList.remove("show");
+        winnerView.classList.remove("show");
+        void winnerView.offsetWidth;
+        winnerView.classList.add("show");
+      }
+
+      function showIdle() {
+        winnerView.classList.remove("show");
+        idleView.classList.add("show");
+      }
+
+      renderCount();
+      const existingDraw = parseEvent(localStorage.getItem(STORAGE_KEYS.draw));
+      if (existingDraw) showWinner(existingDraw.winnerName);
+
+      window.addEventListener("storage", (event) => {
+        if (event.key === STORAGE_KEYS.attendees) renderCount();
+        if (event.key === STORAGE_KEYS.draw) {
+          const draw = parseEvent(event.newValue);
+          if (draw) showWinner(draw.winnerName);
+          else showIdle();
+        }
+      });
+    </script>
+  </body>
+</html>

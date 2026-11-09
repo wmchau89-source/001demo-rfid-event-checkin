@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Operator Console</title>
+    <link rel="stylesheet" href="/style.css" />
+    <meta property="og:image" content="https://bolt.new/static/og_default.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+  </head>
+  <body>
+    <main class="card wide">
+      <h1>Operator Console</h1>
+
+      <section>
+        <h2>Attendees</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tag ID</th>
+                <th>Name</th>
+                <th>Tier</th>
+                <th>Routing</th>
+                <th>Checked in</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="attendee-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Add walk-in</h2>
+        <form id="walkin-form">
+          <input name="name" placeholder="Name" required />
+          <input name="tagId" placeholder="Tag ID" required />
+          <input name="routing" placeholder="Routing" required />
+          <button type="submit">Add walk-in</button>
+        </form>
+        <p id="walkin-message" class="message" role="status"></p>
+      </section>
+
+      <section>
+        <h2>Lucky draw</h2>
+        <button id="draw-btn" type="button">Run Lucky Draw</button>
+        <p id="draw-message" class="message" role="status"></p>
+      </section>
+
+      <section class="placeholder">
+        <h2>Module: Gamified Retention Pool — Coming Soon</h2>
+        <!-- FUTURE ADD-ON MODULE: LUCKY DRAW SLOT MACHINE -->
+      </section>
+    </main>
+
+    <script type="module">
+      import {
+        attendees,
+        addWalkIn,
+        checkIn,
+        writeScanEvent,
+        writeDrawEvent,
+        entrantsOf,
+      } from "/shared.js";
+
+      const TAG_DEDUP_MS = 3000;
+      const lastScanAt = new Map();
+
+      const rowsEl = document.getElementById("attendee-rows");
+      const walkinForm = document.getElementById("walkin-form");
+      const walkinMessage = document.getElementById("walkin-message");
+      const drawBtn = document.getElementById("draw-btn");
+      const drawMessage = document.getElementById("draw-message");
+
+      function showMessage(el, text) {
+        el.textContent = text;
+      }
+
+      function renderRow(attendee) {
+        const tr = document.createElement("tr");
+        const values = [
+          attendee.tagId,
+          attendee.name,
+          attendee.tier,
+          attendee.routing,
+          attendee.checkedIn ? "Yes" : "No",
+        ];
+        for (const value of values) {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.append(td);
+        }
+
+        const actionTd = document.createElement("td");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "Simulate Tag Entry";
+        button.addEventListener("click", () => simulateEntry(attendee.tagId));
+        actionTd.append(button);
+        tr.append(actionTd);
+        return tr;
+      }
+
+      function render() {
+        rowsEl.replaceChildren(...attendees.map(renderRow));
+      }
+
+      function simulateEntry(tagId) {
+        const now = Date.now();
+        const last = lastScanAt.get(tagId);
+        if (last !== undefined && now - last < TAG_DEDUP_MS) return;
+        lastScanAt.set(tagId, now);
+
+        checkIn(tagId);
+        writeScanEvent(tagId);
+        render();
+      }
+
+      walkinForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(walkinForm);
+        const name = String(data.get("name")).trim();
+        const tagId = String(data.get("tagId")).trim();
+        const routing = String(data.get("routing")).trim();
+
+        if (!name || !tagId || !routing) {
+          showMessage(walkinMessage, "Name, Tag ID and Routing are all required.");
+          return;
+        }
+        if (!addWalkIn({ name, tagId, routing })) {
+          showMessage(walkinMessage, `Tag ID ${tagId} is already registered.`);
+          return;
+        }
+
+        walkinForm.reset();
+        render();
+        showMessage(walkinMessage, `Added ${name}.`);
+      });
+
+      drawBtn.addEventListener("click", () => {
+        const entrants = entrantsOf(attendees);
+        if (entrants.length === 0) {
+          showMessage(drawMessage, "No entrants yet.");
+          return;
+        }
+
+        const winner = entrants[Math.floor(Math.random() * entrants.length)];
+        writeDrawEvent({ winnerName: winner.name, winnerTagId: winner.tagId });
+        showMessage(drawMessage, `Winner drawn: ${winner.name}.`);
+      });
+
+      render();
+    </script>
+  </body>
+</html>

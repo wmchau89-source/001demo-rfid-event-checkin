@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="card centered">
+      <div class="stack">
+        <p id="idle-view" class="view show">WELCOME — Please walk towards the screen to check in.</p>
+
+        <div id="granted-view" class="view">
+          <h1>Access Granted ✔</h1>
+          <p id="greeting"></p>
+          <p>🎟️ Tag Authenticated. Entered into Lucky Draw Pool.</p>
+        </div>
+
+        <div id="unknown-view" class="view">
+          <h1>Tag Not Recognized</h1>
+          <p>Please see the front desk for assistance.</p>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { STORAGE_KEYS, loadAttendees, findAttendee, parseEvent } from "/shared.js";
+
+      const RESET_MS = 4000;
+
+      const idleView = document.getElementById("idle-view");
+      const grantedView = document.getElementById("granted-view");
+      const unknownView = document.getElementById("unknown-view");
+      const greetingEl = document.getElementById("greeting");
+
+      let resetTimer = null;
+
+      function showView(view) {
+        for (const el of [idleView, grantedView, unknownView]) {
+          el.classList.toggle("show", el === view);
+        }
+      }
+
+      function showAttendee(scan) {
+        const attendee = findAttendee(loadAttendees(), scan.tagId);
+        if (!attendee) {
+          showView(unknownView);
+          return;
+        }
+        greetingEl.textContent = `Welcome, ${attendee.name}! Thank you for attending. Please make your way to ${attendee.routing}.`;
+        showView(grantedView);
+      }
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== STORAGE_KEYS.scan) return;
+        const scan = parseEvent(event.newValue);
+        if (!scan) return;
+
+        clearTimeout(resetTimer);
+        showAttendee(scan);
+        resetTimer = setTimeout(() => showView(idleView), RESET_MS);
+      });
+    </script>
+  </body>
+</html>
