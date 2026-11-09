@@ -4,7 +4,7 @@ A three-screen event check-in prototype: an operator console, a public viewport,
 
 ## Live demo
 
-- Operator console: https://wmchau89-source.github.io/001demo-rfid-event-checkin/
+- Operator console: https://wmchau89-source.github.io/001demo-rfid-event-checkin/operator.html
 - Public viewport: https://wmchau89-source.github.io/001demo-rfid-event-checkin/public.html
 - Draw screen: https://wmchau89-source.github.io/001demo-rfid-event-checkin/draw.html
 
